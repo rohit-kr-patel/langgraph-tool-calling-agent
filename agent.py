@@ -1,7 +1,13 @@
 from openai import OpenAI
+from dotenv import load_dotenv
+import os
+load_dotenv()
+
+api_key = os.getenv("API_KEY")
+
 
 client = OpenAI(
-    api_key=
+    api_key=api_key,
     base_url="https://openrouter.ai/api/v1"
 )
 
@@ -12,10 +18,10 @@ def get_decision(input_text):
     user input:"{input_text}"
 
     Available Tools:
-    -add
-    -multiply
-    -sub
-    -divide
+   - add        ← add, addition, plus
+   - sub        ← subtract, minus, subtraction
+   - multiply   ← multiply, product
+   - divide     ← divide, division
 
 Rules:
     - Return only the tool name
@@ -33,23 +39,32 @@ Rules:
     return response.choices[0].message.content.strip().lower()
 
 def agent_node(state):
-    state["decision"] = "none"
-    input_text=state["input"].lower()
-    words=input_text.split()
-    numbers=[]
+    if "res" in state:
+        # Tool has already run
+        state["done"] = True
+        return state
+
+    # ---- First run: planning phase ----
+    state["done"] = False
+
+    input_text = state["input"].lower()
+    words = input_text.split()
+
+    numbers = []
     for word in words:
-        if word.isdigit():
-            numbers.append(int(word))
+        clean = "".join(ch for ch in word if ch.isdigit())
+        if clean:
+            numbers.append(int(clean))
 
     if len(numbers) < 2:
         state["decision"] = "none"
         return state
 
-    
-    state["a"]=numbers[0]
-    state["b"]=numbers[1]
-  
-    state["decision"] = get_decision(input_text)
-    print("LLM DECISION:", state["decision"])
-    
+    state["a"] = numbers[0]
+    state["b"] = numbers[1]
+
+    decision = get_decision(input_text)
+    state["decision"] = decision
+    print("LLM DECISION:", decision)
+
     return state

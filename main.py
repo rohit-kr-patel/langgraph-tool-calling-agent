@@ -11,6 +11,7 @@ class AgentState(TypedDict):
     a:int
     b:int
     res:float
+    done: bool 
 
 def adding_node(state:AgentState)->AgentState:
     state["res"] = add.invoke({
@@ -41,6 +42,10 @@ def div_node(state:AgentState)->AgentState:
 def route_decision(state: AgentState):
     return state["decision"]
 
+def route_after_agent(state: AgentState):
+    if state.get("done"):
+        return END
+    return state["decision"]
 
 graph=StateGraph(AgentState)
 graph.add_node("agent",agent_node)
@@ -51,27 +56,33 @@ graph.add_node("div_node",div_node)
 
 graph.set_entry_point("agent")
 
+
 graph.add_conditional_edges(
     "agent",
-    route_decision,{
-        "add":"adding_node",
-        "sub":"sub_node",
-        "multiply":"mul_node",
-        "divide":"div_node",
-        "none":END
+    route_after_agent,
+    {
+        "add": "adding_node",
+        "sub": "sub_node",
+        "multiply": "mul_node",
+        "divide": "div_node",
+        END: END,
+        "none": END,
     }
 )
 
-graph.add_edge("adding_node",END)
-graph.add_edge("sub_node",END)
-graph.add_edge("mul_node",END)
-graph.add_edge("div_node",END)
+# Tool → Agent (THIS CREATES THE LOOP)
+graph.add_edge("adding_node", "agent")
+graph.add_edge("sub_node", "agent")
+graph.add_edge("mul_node", "agent")
+graph.add_edge("div_node", "agent")
+
+
 
 app=graph.compile()
 
 if __name__ == "__main__":
     initial_state = {
-        "input": "Subtract 5 from 11"
+        "input": "Subtract 5 and 5 "
     }
 
     final_state = app.invoke(initial_state)
