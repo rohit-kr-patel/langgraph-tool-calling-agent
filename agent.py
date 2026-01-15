@@ -39,32 +39,44 @@ Rules:
     return response.choices[0].message.content.strip().lower()
 
 def agent_node(state):
-    if "res" in state:
-        # Tool has already run
-        state["done"] = True
-        return state
 
     # ---- First run: planning phase ----
     state["done"] = False
 
     input_text = state["input"].lower()
-    words = input_text.split()
-
-    numbers = []
-    for word in words:
-        clean = "".join(ch for ch in word if ch.isdigit())
-        if clean:
-            numbers.append(int(clean))
-
-    if len(numbers) < 2:
-        state["decision"] = "none"
+    if "steps" not in state:
+        state["steps"]=[s.strip() for s in input_text.split("then")]
+        state["step_index"]=0
+    
+    if state["step_index"] >= len(state["steps"]):
+        state["done"]=True
         return state
+    
+    current_step_text=state["steps"][state["step_index"]]
+    numbers = []
+    words = current_step_text.split()
+    for word in words:
+            clean = "".join(ch for ch in word if ch.isdigit())
+            if clean:
+                numbers.append(int(clean))
+    if state["step_index"]==0:
+        if len(numbers) < 2:
+            state["decision"] = "none"
+            return state
 
-    state["a"] = numbers[0]
-    state["b"] = numbers[1]
+        state["a"] = numbers[0]
+        state["b"] = numbers[1]
+    else:
+        if len(numbers) < 1:
+            state["decision"] = "none"
+            return state
 
-    decision = get_decision(input_text)
+        state["a"] = state["res"]
+        state["b"] = numbers[0]
+    decision = get_decision(current_step_text)
     state["decision"] = decision
+    state["step_index"]+=1
+    print("PLANNING STEP:",current_step_text)
     print("LLM DECISION:", decision)
 
     return state
