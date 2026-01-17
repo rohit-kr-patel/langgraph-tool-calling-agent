@@ -14,6 +14,7 @@ class AgentState(TypedDict):
     done: bool 
     steps:dict
     step_index:int
+    max_step:int
 
 def adding_node(state:AgentState)->AgentState:
     state["res"] = add.invoke({
@@ -84,7 +85,8 @@ app=graph.compile()
 
 if __name__ == "__main__":
     initial_state = {
-        "input": "Add 10 and 5, then subtract 3 "
+        "input": "Add 10 and 5 then then then then ",
+       "max_step": 5 
     }
 
     final_state = app.invoke(initial_state)

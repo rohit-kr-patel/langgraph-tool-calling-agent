@@ -41,17 +41,21 @@ Rules:
 def agent_node(state):
 
     # ---- First run: planning phase ----
-    state["done"] = False
+    
 
     input_text = state["input"].lower()
     if "steps" not in state:
-        state["steps"]=[s.strip() for s in input_text.split("then")]
+        state["steps"] = [
+        s.strip()
+        for s in input_text.split("then")
+        if s.strip()
+    ]
         state["step_index"]=0
     
-    if state["step_index"] >= len(state["steps"]):
+    if state["step_index"] >= len(state["steps"]) or state["step_index"]>=state["max_step"] :
         state["done"]=True
         return state
-    
+    state["done"] = False
     current_step_text=state["steps"][state["step_index"]]
     numbers = []
     words = current_step_text.split()
